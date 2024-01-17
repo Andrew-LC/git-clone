@@ -11,23 +11,7 @@ commits, trees etc.), Git's transfer protocols and more.
 **Note**: If you're viewing this repo on GitHub, head over to
 [codecrafters.io](https://codecrafters.io) to try the challenge.
 
-# Passing the first stage
-
-The entry point for your Git implementation is in `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
-
-```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
-```
-
-That's all!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
+# How to run locally to test it out
 1. Ensure you have `cargo (1.54)` installed locally
 1. Run `./your_git.sh` to run your Git implementation, which is implemented in
    `src/main.rs`. This command compiles your Rust project, so it might be slow

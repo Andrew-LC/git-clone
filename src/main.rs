@@ -1,18 +1,43 @@
 #[allow(unused_imports)]
 use std::env;
 #[allow(unused_imports)]
-use std::fs;
-use flate2::{self, read::ZlibDecoder, Compression};
-use std::fs::File;
+use flate2::{self, read::ZlibDecoder, write::ZlibEncoder, Compression};
 use std::io::Read;
-use std::path::Path;
-use ring::digest::SHA256;
+use std::io::Write;
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
+use ring::digest::{Digest, SHA256};
 
 #[allow(dead_code)]
 enum GitObj {
     Blob,
     Tree,
     Commit
+}
+
+fn create_object_path(git_path: &str, sha1: &Digest) -> anyhow::Result<PathBuf> {
+    let hex_hash = sha1.as_ref().iter().map(|b| format!("{:02x}", b)).collect::<String>();
+    let (dir, file) = hex_hash.split_at(2);
+
+    let object_path = Path::new(git_path)
+        .join("objects")
+        .join(dir);
+
+    // Create directories if they don't exist
+    fs::create_dir_all(&object_path)?;
+
+    Ok(object_path.join(file))
+}
+
+// Function to compress and write the file content to the object path
+fn write_object(object_path: &Path, content: String) -> anyhow::Result<()> {
+    let file = File::create(object_path)?;
+    let mut encoder = ZlibEncoder::new(file, Compression::default());
+
+    encoder.write_all(content.as_bytes())?;
+    encoder.finish()?;
+    
+    Ok(())
 }
 
 fn main() -> anyhow::Result<()> {
@@ -60,12 +85,18 @@ fn main() -> anyhow::Result<()> {
 	    
 	    match command.as_str() {
 		"-w" => {
-		    let file = &args[3];
-		    let contents = fs::read_to_string(file);
-		    let sha = ring::digest::digest(&SHA256, contents.unwrap().as_bytes());
-		    let compressed_contents = flate2::write::ZlibEncoder::new(contents.unwrap().as_bytes(), flate2::Compression::default());
+		    let filename = &args[3];
+		    let file_content = fs::read_to_string(filename)?;
+		    let sha1 = ring::digest::digest(&SHA256, file_content.as_bytes());
+		    let git_object_path = ".git/objects/";
 
-		    println!("{:?}", sha);
+		    // Create the object path based on the SHA1 hash
+		    let object_path = create_object_path(git_object_path, &sha1)?;
+
+		    // Compress and write the file content to the object path
+		    write_object(&object_path, file_content)?;
+
+		    println!("Object successfully written to: {:?}", object_path);
 		},
 		_ => todo!()
 	    }

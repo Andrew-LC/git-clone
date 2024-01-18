@@ -20,7 +20,6 @@ fn create_object_path(git_path: &str, sha1: &Digest) -> anyhow::Result<PathBuf> 
     let (dir, file) = hex_hash.split_at(2);
 
     let object_path = Path::new(git_path)
-        .join("objects")
         .join(dir);
 
     // Create directories if they don't exist
@@ -29,16 +28,19 @@ fn create_object_path(git_path: &str, sha1: &Digest) -> anyhow::Result<PathBuf> 
     Ok(object_path.join(file))
 }
 
-// Function to compress and write the file content to the object path
+
 fn write_object(object_path: &Path, content: String) -> anyhow::Result<()> {
     let file = File::create(object_path)?;
     let mut encoder = ZlibEncoder::new(file, Compression::default());
 
-    encoder.write_all(content.as_bytes())?;
-    encoder.finish()?;
-    
-    Ok(())
+    if let Ok(_) = encoder.write_all(content.as_bytes()) {
+	encoder.finish()?;  
+	Ok(())
+    } else {
+	panic!("Failed to compress!");
+    }  
 }
+
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -61,20 +63,19 @@ fn main() -> anyhow::Result<()> {
 	    match args[2].as_str() {
 		"-p" => {
 		    let git_object_path = ".git/objects/";
-		    let mut raw_content = String::new();
 		    let (path, file) = &args[3].split_at(2);
 		    let file_location = Path::new(&git_object_path).join(path).join(file);
 
 		    if file_location.exists() {
-			ZlibDecoder::new(File::open(file_location)?)
-                            .read_to_string(&mut raw_content)?;
-			let prettyfy_content = raw_content
-                            .split_once("\0")
-                            .unwrap()
-                            .1
-                            .trim_end()
-                            .trim_end();
-			println!("{}", prettyfy_content.trim_end())
+			if let Ok(file) = File::open(file_location) {
+			    let mut decoder = ZlibDecoder::new(file);
+			    let mut s = String::new();
+			    if let Ok(_) = decoder.read_to_string(&mut s) {
+				print!("{}", s);
+			    } else {
+				panic!("Zlib Error!");
+			    }    
+			}
                     };
 		},
 		_ => todo!()
@@ -86,6 +87,7 @@ fn main() -> anyhow::Result<()> {
 	    match command.as_str() {
 		"-w" => {
 		    let filename = &args[3];
+		    println!("{}", filename);
 		    let file_content = fs::read_to_string(filename)?;
 		    let sha1 = ring::digest::digest(&SHA256, file_content.as_bytes());
 		    let git_object_path = ".git/objects/";

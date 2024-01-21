@@ -1,39 +1,43 @@
-#[allow(dead_code)]
-#[allow(unused_imports)]
+use std::fs::{self, File, DirEntry};
 use std::path::Path;
-use std::fs::File;
-use flate2::{self, read::ZlibDecoder};
 use std::io::Read;
 
-use anyhow::Result;
-
+#[allow(dead_code)]
 pub struct Entry {
-    pub mode: String,
-    pub file_type: String,
-    pub sha: String,
     pub filename: String,
+    pub sha: String,
+    pub file_type: String,
 }
 
 impl Entry {
-    pub fn _new(mode: String, sha: String, file_type: String, filename: String) -> Self {
-	Self { mode, file_type, sha, filename  }
+    pub fn _new(filename: String, sha: String, file_type: String) -> Self {
+	Self { filename, sha, file_type }
     }
 
-    pub fn parse(path: &str) -> Result<Vec<Entry>, ()> {
-	let (path, file) = path.split_at(2);
-	let object_path = Path::new("./git/objects/").join(path).join(file);
+    pub fn _parse(path: &str) -> Vec<Entry> {
+	let (dir, file) = path.split_at(2);
+	let object_path = Path::new("./git/objects").join(dir).join(file);
+	let mut file_open = File::open(object_path).unwrap();
+	let mut contents = String::new();
 	let entries = vec![];
 
-	if let Ok(file) = File::open(&object_path) {
-	    let mut decoder = ZlibDecoder::new(file);
-	    let mut s = String::new();
-	    if let Ok(_) = decoder.read_to_string(&mut s) {
-		print!("{}", s);
-	    } else {
-		panic!("Zlib Error!");
-	    }    
-	}
+	let _ = file_open.read_to_string(&mut contents);
+	print!("{}", contents);
 
-	Ok(entries)
+	entries
+    }
+
+    pub fn ls_tree() {
+	let mut dir_contents = fs::read_dir(".").unwrap()
+            .into_iter()
+            .filter(|entry| entry.as_ref().unwrap().path().file_name().unwrap() != ".git")
+            .collect::<Result<Vec<DirEntry>, std::io::Error>>().unwrap();
+
+	dir_contents.sort_by(|a, b| a.path().partial_cmp(&b.path()).unwrap());
+
+	for item in dir_contents.iter() {
+            println!("{}", item.path().file_name().unwrap().to_str().unwrap());
+
+	}
     }
 }

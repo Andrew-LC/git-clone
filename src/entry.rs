@@ -1,34 +1,39 @@
-use std::fs;
-use std::path::Path;
-
 #[allow(dead_code)]
+#[allow(unused_imports)]
+use std::path::Path;
+use std::fs::File;
+use flate2::{self, read::ZlibDecoder};
+use std::io::Read;
+
+use anyhow::Result;
+
 pub struct Entry {
-    pub path: String,
-    pub sha: String,
+    pub mode: String,
     pub file_type: String,
+    pub sha: String,
+    pub filename: String,
 }
 
 impl Entry {
-    pub fn new(path: String, sha: String, file_type: String) -> Self {
-	Self { path, sha, file_type }
+    pub fn _new(mode: String, sha: String, file_type: String, filename: String) -> Self {
+	Self { mode, file_type, sha, filename  }
     }
 
-    pub fn parse(sha: &str) -> Vec<Entry> {
-	let (dir, file) = sha.split_at(2);
-	let object_path = Path::new("./git/objects").join(dir).join(file);
-	let mut entries = vec![];
+    pub fn parse(path: &str) -> Result<Vec<Entry>, ()> {
+	let (path, file) = path.split_at(2);
+	let object_path = Path::new("./git/objects/").join(path).join(file);
+	let entries = vec![];
 
-	if let Ok(data) = fs::read_to_string(&object_path) {
-            for line in data.lines() {
-		let (first, filename) = line.split_once(' ').unwrap();
-		let collected_data: Vec<&str> = first.split_whitespace().collect();
-		let (_, file_type_sha) = collected_data.split_at(2);
-		let (file_type, sha) = file_type_sha.split_at(1);
-
-		entries.push(Entry::new(filename.to_string(), sha.join(" ").to_string(), file_type.join(" ").to_string()));
-            }
+	if let Ok(file) = File::open(&object_path) {
+	    let mut decoder = ZlibDecoder::new(file);
+	    let mut s = String::new();
+	    if let Ok(_) = decoder.read_to_string(&mut s) {
+		print!("{}", s);
+	    } else {
+		panic!("Zlib Error!");
+	    }    
 	}
 
-	entries
+	Ok(entries)
     }
 }

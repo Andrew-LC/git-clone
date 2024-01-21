@@ -17,6 +17,8 @@ enum GitObj {
 
 mod entry;
 use entry::Entry;
+mod utils;
+use utils::decode;
 
 fn create_object_path(git_path: &str, sha1: &Digest) -> anyhow::Result<PathBuf> {
     let hex_hash = sha1.as_ref().iter().map(|b| format!("{:02x}", b)).collect::<String>();
@@ -71,21 +73,7 @@ fn main() -> anyhow::Result<()> {
 	"cat-file" => {
 	    match args[2].as_str() {
 		"-p" => {
-		    let git_object_path = ".git/objects/";
-		    let (path, file) = &args[3].split_at(2);
-		    let file_location = Path::new(&git_object_path).join(path).join(file);
-
-		    if file_location.exists() {
-			if let Ok(file) = File::open(file_location) {
-			    let mut decoder = ZlibDecoder::new(file);
-			    let mut s = String::new();
-			    if let Ok(_) = decoder.read_to_string(&mut s) {
-				print!("{}", s);
-			    } else {
-				panic!("Zlib Error!");
-			    }    
-			}
-                    };
+		   decode(&args[3]); 
 		},
 		_ => todo!()
 	    }
@@ -112,16 +100,21 @@ fn main() -> anyhow::Result<()> {
 	    }
 	},
 	"ls-tree" => {
-	    let command = &args[3];
+	    let command = &args[2];
 	    match command.as_str() {
 		"--name-only" => {
-		    let tree_hash = &args[4]; 
-		    let entries: Vec<Entry> = Entry::parse(tree_hash);
+		    let tree_hash = &args[3]; 
+		    let parse = Entry::parse(tree_hash);
 
-		    for entry in &entries {
-			if entry.file_type == "dir" {
-			    println!("{filename}", filename=entry.path);
-			}
+		    if let Ok(_entries) = parse {
+			// for entry in &entries {
+			//     if entry.file_type == "dir" {
+			// 	println!("{filename}", filename=entry.filename);
+			//     }
+			// }
+			todo!();
+		    } else {
+			eprintln!("Err: Failed to parse tree hash");
 		    }
 		}
 		_ => panic!("Unknown command")

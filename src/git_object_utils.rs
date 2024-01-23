@@ -1,12 +1,11 @@
-#[allow(unused_imports)]
 use flate2::{self, read::ZlibDecoder, write::ZlibEncoder, Compression};
-#[allow(unused_imports)]
 use std::io::{Read, Write};
 use std::path::Path;
 use anyhow;
 use std::fs::{self, File};
 use ring::digest::SHA256;
 
+// Types of git objects
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum GitObjectType {
@@ -15,6 +14,7 @@ pub enum GitObjectType {
     Commit,
 }
 
+// Git object
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Object {
@@ -24,6 +24,7 @@ pub struct Object {
 }
 
 impl Object {
+    // Read object from file
     pub fn from_sha(path: &str) -> anyhow::Result<Self> {
 	let git_object_path = ".git/objects/";
 	let (path, file) = path.split_at(2); // Consider extracting two characters at a time
@@ -58,6 +59,7 @@ impl Object {
 	}
     }
 
+    // Hash object
     pub fn hash(file_content: &str) -> anyhow::Result<String> {
 	let sha1 = ring::digest::digest(&SHA256, file_content.as_bytes());  
 	let hex_hash = sha1.as_ref().iter().map(|b| format!("{:02x}", b)).collect::<String>();
@@ -66,6 +68,7 @@ impl Object {
 	Ok(hex_hash.to_string())
     }
 
+    // Write object to file
     pub fn hash_object(path: &str) -> anyhow::Result<(String, String)> {
 	let file_content = fs::read_to_string(path)?;
 	let sha = Object::hash(&file_content)?;

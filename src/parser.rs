@@ -21,7 +21,9 @@ pub enum GitCommand {
 	)]
 	pretty_print: bool,
     },
-    WriteTree,
+    LSTree {
+	tree_path: String
+    },
     Unknown,
 }
 

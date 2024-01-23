@@ -1,6 +1,7 @@
 use std::fs;
 use clap::Parser;
 use git_starter_rust::git_object_utils::Object;
+use git_starter_rust::entry;
 use git_starter_rust::parser::Git;
 use git_starter_rust::parser::GitCommand;
 
@@ -27,8 +28,8 @@ fn main() {
 		print!("{} {}", sha, location);
 	    }
 	}
-	GitCommand::WriteTree => {
-	   println!("Write tree"); 
+	GitCommand::LSTree { tree_path } => {
+	    entry::parse(&tree_path);
 	}
         GitCommand::Unknown => {
             println!("Unknown command");

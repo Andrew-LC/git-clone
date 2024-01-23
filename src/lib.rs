@@ -1,2 +1,2 @@
-pub mod utils;
-pub mod entry;
+pub mod git_object_utils;
+pub mod parser;

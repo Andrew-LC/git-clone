@@ -28,8 +28,11 @@ fn main() {
 		print!("{} {}", sha, location);
 	    }
 	}
-	GitCommand::LSTree { tree_path } => {
-	    entry::parse(&tree_path);
+	GitCommand::LSTree { tree_path, .. } => {
+	    entry::ls_tree(&tree_path, !true);
+	}
+	GitCommand::WriteTree { .. } => {
+	    todo!()
 	}
         GitCommand::Unknown => {
             println!("Unknown command");

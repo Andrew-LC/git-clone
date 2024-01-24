@@ -22,7 +22,15 @@ pub enum GitCommand {
 	pretty_print: bool,
     },
     LSTree {
-	tree_path: String
+	tree_path: String,
+	#[arg(
+	    short,
+	    help = "Write the hash into the object database"
+	)]
+	name_only: Option<String>,
+    },
+    WriteTree {
+	tree_path: String,
     },
     Unknown,
 }

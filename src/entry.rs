@@ -5,6 +5,8 @@ use flate2::{self, read::ZlibDecoder, write::ZlibEncoder, Compression};
 use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use super::git_object_utils::Object;
+use hex;
+use sha1::{Digest, Sha1};
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -65,7 +67,7 @@ pub fn write_tree() -> Result<()> {
     let mut entries: Vec<Entry> = Vec::new();
     let tree_hash = visit_dir(Path::new("."), &mut entries)?;
 
-    println!("{}", String::from_utf8(tree_hash)?);
+    println!("{}", hex::encode(tree_hash));
 
     Ok(())
 }
@@ -173,9 +175,16 @@ fn create_tree_file(entries: &mut Vec<Entry>) -> Result<Vec<u8>> {
     Ok(index)
 }
 
+fn hash_sha(file_content: &[u8]) -> Vec<u8> {
+    let mut hasher = Sha1::new();
+    hasher.update(file_content);
+    hasher.finalize().to_vec()
+}
+
 fn save_to_disk(content: &[u8]) -> Result<Vec<u8>> {
-    let sha = Object::hash(std::str::from_utf8(&content)
-			   .map_err(|e| anyhow::Error::msg(format!("Error converting to UTF-8: {}", e)))?)?;
+    let sha = hash_sha(&content);
+    let hash_utf8 = hex::encode(&sha);
+    println!("{:?}", sha);
 
     let mut encoded = Vec::new();
     let mut encoder = ZlibEncoder::new(&mut encoded, Compression::default());
@@ -184,8 +193,9 @@ fn save_to_disk(content: &[u8]) -> Result<Vec<u8>> {
     let compressed = encoder.finish()?.to_owned();
 
     let git_object_path = ".git/objects/";
-    let (path, file) = sha.split_at(2);
-    let dir_location = Path::new(&git_object_path).join(path);
+    let path = &hash_utf8[0..2];
+    let file = &hash_utf8[2..];
+    let dir_location = PathBuf::from(&git_object_path).join(path);
 
     println!("{:?}", dir_location);
 
@@ -200,7 +210,7 @@ fn save_to_disk(content: &[u8]) -> Result<Vec<u8>> {
 
     std::fs::write(file_location, &compressed)?;
     
-    Ok(sha.into_bytes())
+    Ok(sha)
 }
 
 

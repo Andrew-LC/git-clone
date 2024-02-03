@@ -69,13 +69,17 @@ impl Object {
     }
 
     // Write object to file
-    pub fn hash_object(path: &str) -> anyhow::Result<(String, String)> {
+    pub fn hash_object(path: &Path) -> anyhow::Result<(String, String)> {
 	let file_content = fs::read_to_string(path)?;
 	let sha = Object::hash(&file_content)?;
 
 	let git_object_path = ".git/objects/";
 	let (path, file) = sha.split_at(2);
 	let dir_location = Path::new(&git_object_path).join(path);
+
+	if dir_location.exists(){
+	    return Ok((sha, "".to_string()));
+	}
 
 	// Create the necessary directories if they don't exist
 	fs::create_dir_all(&dir_location)?;

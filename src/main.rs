@@ -1,5 +1,6 @@
 use std::fs;
 use clap::Parser;
+use std::path::Path;
 use git_starter_rust::git_object_utils::Object;
 use git_starter_rust::entry;
 use git_starter_rust::parser::Git;
@@ -24,7 +25,7 @@ fn main() {
         }
 	GitCommand::HashObject { filepath, pretty_print } => {
 	    if *pretty_print {
-		let (sha, location) = Object::hash_object(&filepath).unwrap(); 
+		let (sha, location) = Object::hash_object(&Path::new(filepath)).unwrap(); 
 		print!("{} {}", sha, location);
 	    }
 	}
@@ -32,7 +33,7 @@ fn main() {
 	    entry::ls_tree(&tree_path, !true);
 	}
 	GitCommand::WriteTree { .. } => {
-	    todo!()
+	    entry::write_tree().expect("could not read dir");
 	}
         GitCommand::Unknown => {
             println!("Unknown command");

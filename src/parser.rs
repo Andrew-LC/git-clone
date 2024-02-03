@@ -30,7 +30,7 @@ pub enum GitCommand {
 	name_only: Option<String>,
     },
     WriteTree {
-	tree_path: String,
+	tree_path: Option<String>,
     },
     Unknown,
 }
